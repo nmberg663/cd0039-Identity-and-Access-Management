@@ -2,10 +2,14 @@ import os
 from sqlalchemy import Column, String, Integer
 from flask_sqlalchemy import SQLAlchemy
 import json
+from dotenv import load_dotenv
 
-database_filename = "database.db"
+# load environment variables
+load_dotenv()
+DATABASE_FILENAME = os.environ.get("CAFE_DATABASE_FILENAME")
+
 project_dir = os.path.dirname(os.path.abspath(__file__))
-database_path = "sqlite:///{}".format(os.path.join(project_dir, database_filename))
+database_path = "sqlite:///{}".format(os.path.join(project_dir, DATABASE_FILENAME))
 
 db = SQLAlchemy()
 
@@ -16,10 +20,11 @@ setup_db(app)
 
 
 def setup_db(app):
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_path
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    db.app = app
-    db.init_app(app)
+    with app.app_context():
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_path
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+        db.app = app
+        db.init_app(app)
 
 
 '''
@@ -31,16 +36,17 @@ db_drop_and_create_all()
 
 
 def db_drop_and_create_all():
-    db.drop_all()
-    db.create_all()
-    # add one demo row which is helping in POSTMAN test
-    drink = Drink(
-        title='water',
-        recipe='[{"name": "water", "color": "blue", "parts": 1}]'
-    )
+    with db.app.app_context():
+        db.drop_all()
+        db.create_all()
+        # add one demo row which is helping in POSTMAN test
+        drink = Drink(
+            title='water',
+            recipe='[{"name": "water", "color": "blue", "parts": 1}]'
+        )
 
 
-    drink.insert()
+        drink.insert()
 # ROUTES
 
 '''
